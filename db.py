@@ -45,6 +45,16 @@ SCHEMA = [
     )
     """,
     "CREATE INDEX IF NOT EXISTS scenes_run_idx ON scenes (run_id, seq)",
+    """
+    CREATE TABLE IF NOT EXISTS save_points (
+        id BIGSERIAL PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        snapshot JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS save_points_run_idx ON save_points (run_id, created_at)",
 ]
 
 
@@ -203,3 +213,106 @@ def record_choice(run_id: str, seq: int, index: int, text_value: str) -> None:
             ),
             {"run_id": run_id, "seq": seq, "index": index, "text_value": text_value},
         )
+
+
+SNAPSHOT_RUN_FIELDS = (
+    "player_name",
+    "home_town",
+    "waiting_for",
+    "health",
+    "energy",
+    "supplies",
+    "morale",
+    "distance_miles",
+    "day",
+    "hour",
+    "inventory",
+    "flags",
+)
+
+
+def _row_to_save(row) -> dict:
+    d = dict(row._mapping)
+    if d.get("created_at") is not None:
+        d["created_at"] = d["created_at"].isoformat()
+    d.pop("snapshot", None)
+    return d
+
+
+def create_save_point(run_id: str, name: str) -> dict | None:
+    run = get_run(run_id)
+    if not run:
+        return None
+    scenes = get_scenes(run_id)
+    snapshot = {
+        "run": {key: run[key] for key in SNAPSHOT_RUN_FIELDS},
+        "scenes": [
+            {
+                "seq": s["seq"],
+                "title": s["title"],
+                "narrative": s["narrative"],
+                "choices": s["choices"],
+                "chosen_index": s["chosen_index"],
+                "chosen_text": s["chosen_text"],
+            }
+            for s in scenes
+        ],
+    }
+    with get_engine().begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO save_points (run_id, name, snapshot)
+                VALUES (:run_id, :name, CAST(:snapshot AS jsonb))
+                RETURNING id, run_id, name, created_at
+                """
+            ),
+            {"run_id": run_id, "name": name, "snapshot": json.dumps(snapshot)},
+        ).first()
+    return _row_to_save(row)
+
+
+def list_save_points(run_id: str) -> list[dict]:
+    with get_engine().connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, run_id, name, created_at,
+                    snapshot->'run'->>'distance_miles' AS distance_miles,
+                    snapshot->'run'->>'day' AS day
+                FROM save_points WHERE run_id = :run_id
+                ORDER BY created_at DESC
+                """
+            ),
+            {"run_id": run_id},
+        ).fetchall()
+    out = []
+    for r in rows:
+        d = _row_to_save(r)
+        d["distance_miles"] = int(d["distance_miles"] or 0)
+        d["day"] = int(d["day"] or 1)
+        out.append(d)
+    return out
+
+
+def delete_save_point(save_id: int) -> None:
+    with get_engine().begin() as conn:
+        conn.execute(text("DELETE FROM save_points WHERE id = :id"), {"id": save_id})
+
+
+def resume_save_point(save_id: int, new_run_id: str) -> str | None:
+    """Copy a save point into a new independent run. The original run is left untouched."""
+    with get_engine().connect() as conn:
+        row = conn.execute(
+            text("SELECT snapshot FROM save_points WHERE id = :id"), {"id": save_id}
+        ).first()
+    if not row:
+        return None
+    snapshot = row[0]
+    run = {key: snapshot["run"][key] for key in SNAPSHOT_RUN_FIELDS}
+    create_run({"id": new_run_id, **run})
+    for s in snapshot["scenes"]:
+        add_scene(new_run_id, s["seq"], s)
+        if s["chosen_index"] is not None:
+            record_choice(new_run_id, s["seq"], s["chosen_index"], s["chosen_text"])
+    return new_run_id

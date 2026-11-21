@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatBar } from "@/components/StatBar";
+import { SavePoints } from "@/components/SavePoints";
 import { ReadAloudControls } from "@/components/ReadAloudControls";
 import { useReadAloud } from "@/hooks/useReadAloud";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -26,6 +27,7 @@ interface GameProps {
   onChoose: (index: number) => void;
   onExit: () => void;
   onRestart: () => void;
+  onResumeSave: (saveId: number) => void;
 }
 
 const OPTION_WORDS = ["Option one", "Option two", "Option three"];
@@ -156,7 +158,7 @@ function HistoryEntry({ scene }: { scene: Scene }) {
   );
 }
 
-export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GameProps) {
+export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeSave }: GameProps) {
   const current = scenes[scenes.length - 1];
   const history = scenes.slice(0, -1);
   const ended = run.status === "ended";
@@ -307,6 +309,14 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GamePro
                 )}
               </ul>
             </div>
+
+            {!ended && (
+              <SavePoints
+                runId={run.id}
+                defaultName={`Day ${run.day}, ${String(run.hour).padStart(2, "0")}:00 · ${run.distance_miles} mi`}
+                onResume={onResumeSave}
+              />
+            )}
           </aside>
 
           <main ref={narrativeRef} className="min-w-0">

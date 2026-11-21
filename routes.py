@@ -22,6 +22,10 @@ class Choice(BaseModel):
     index: int
 
 
+class SaveName(BaseModel):
+    name: str = Field(default="Save point", max_length=60)
+
+
 def _clamp(value: int, low: int = 0, high: int = 100) -> int:
     return max(low, min(high, value))
 
@@ -142,6 +146,32 @@ def create_app(static_dir: str) -> FastAPI:
             raise HTTPException(status_code=404, detail="Run not found")
         db.delete_run(run_id)
         return {"ok": True}
+
+    @api.get("/runs/{run_id}/saves")
+    def list_saves(run_id: str):
+        if not db.get_run(run_id):
+            raise HTTPException(status_code=404, detail="Run not found")
+        return {"saves": db.list_save_points(run_id)}
+
+    @api.post("/runs/{run_id}/saves")
+    def create_save(run_id: str, payload: SaveName):
+        name = payload.name.strip() or "Save point"
+        save = db.create_save_point(run_id, name[:60])
+        if not save:
+            raise HTTPException(status_code=404, detail="Run not found")
+        return save
+
+    @api.delete("/saves/{save_id}")
+    def remove_save(save_id: int):
+        db.delete_save_point(save_id)
+        return {"ok": True}
+
+    @api.post("/saves/{save_id}/resume")
+    def resume_save(save_id: int):
+        new_run_id = uuid.uuid4().hex[:12]
+        if not db.resume_save_point(save_id, new_run_id):
+            raise HTTPException(status_code=404, detail="Save point not found")
+        return _bundle(new_run_id)
 
     @api.post("/runs/{run_id}/choose")
     def choose(run_id: str, payload: Choice):

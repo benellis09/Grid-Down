@@ -56,6 +56,15 @@ export interface RunBundle {
 
 export type VoiceGender = "female" | "male";
 
+export interface SavePoint {
+  id: number;
+  run_id: string;
+  name: string;
+  created_at: string;
+  distance_miles: number;
+  day: number;
+}
+
 export interface NewRunPayload {
   player_name: string;
   home_town: string;

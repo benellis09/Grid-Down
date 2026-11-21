@@ -78,6 +78,20 @@ function App() {
     loadRuns();
   };
 
+  const resumeSave = async (saveId: number) => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/saves/${saveId}/resume`, { method: "POST" });
+      if (!res.ok) throw new Error("resume failed");
+      const data: RunBundle = await res.json();
+      setBundle(data);
+      window.history.replaceState({}, "", `?run=${data.run.id}`);
+      loadRuns();
+    } catch {
+      setError("That save could not be opened.");
+    }
+  };
+
   const choose = async (index: number) => {
     if (!bundle) return;
     setBusy(true);
@@ -113,6 +127,7 @@ function App() {
           onChoose={choose}
           onExit={exit}
           onRestart={exit}
+          onResumeSave={resumeSave}
         />
       ) : (
         <Landing
