@@ -25,6 +25,20 @@ interface GameProps {
   onRestart: () => void;
 }
 
+const OPTION_WORDS = ["Option one", "Option two", "Option three"];
+
+// What the narrator says: the scene, then the options, then silence until the player picks.
+function sceneSpeech(scene: Scene): string {
+  const parts = [`${scene.title}.`, scene.narrative];
+  if (scene.choices.length > 0) {
+    parts.push("What do you do?");
+    scene.choices.forEach((choice, i) => {
+      parts.push(`${OPTION_WORDS[i] ?? `Option ${i + 1}`}: ${choice.label}.`);
+    });
+  }
+  return parts.join(" ");
+}
+
 const effectMeta: { key: keyof Effects; label: string; invert?: boolean }[] = [
   { key: "miles", label: "mi" },
   { key: "hours", label: "h" },
@@ -151,10 +165,10 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GamePro
     narrativeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [current?.seq]);
 
-  // Read each new scene aloud. Cleanup cancels speech when the scene changes, the toggle goes off, or the screen unmounts.
+  // Read each new scene and its options aloud, then wait for the player. Cleanup cancels speech when the scene changes, the toggle goes off, or the screen unmounts.
   useEffect(() => {
     if (!readEnabled || !current) return;
-    speakScene(`${current.title}. ${current.narrative}`);
+    speakScene(sceneSpeech(current));
     return () => stopSpeaking();
   }, [readEnabled, current, speakScene, stopSpeaking]);
 
@@ -186,15 +200,13 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GamePro
           </div>
         </div>
 
-        <div className="mt-4 flex justify-end">
-          <ReadAloudControls
-            supported={readAloud.supported}
-            enabled={readEnabled}
-            onEnabledChange={readAloud.setEnabled}
-            gender={readAloud.gender}
-            onGenderChange={readAloud.setGender}
-          />
-        </div>
+        <ReadAloudControls
+          supported={readAloud.supported}
+          enabled={readEnabled}
+          onEnabledChange={readAloud.setEnabled}
+          gender={readAloud.gender}
+          onGenderChange={readAloud.setGender}
+        />
         <div className="mt-6 grid gap-8 lg:grid-cols-[240px_1fr]">
           <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
             <div>
