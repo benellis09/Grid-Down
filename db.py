@@ -316,3 +316,29 @@ def resume_save_point(save_id: int, new_run_id: str) -> str | None:
         if s["chosen_index"] is not None:
             record_choice(new_run_id, s["seq"], s["chosen_index"], s["chosen_text"])
     return new_run_id
+
+
+def list_all_save_points(limit: int = 200) -> list[dict]:
+    """All save points across journeys, oldest first, so they read like chapters."""
+    with get_engine().connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, run_id, name, created_at,
+                    snapshot->'run'->>'player_name' AS player_name,
+                    snapshot->'run'->>'distance_miles' AS distance_miles,
+                    snapshot->'run'->>'day' AS day
+                FROM save_points
+                ORDER BY created_at ASC, id ASC
+                LIMIT :limit
+                """
+            ),
+            {"limit": limit},
+        ).fetchall()
+    out = []
+    for r in rows:
+        d = _row_to_save(r)
+        d["distance_miles"] = int(d["distance_miles"] or 0)
+        d["day"] = int(d["day"] or 1)
+        out.append(d)
+    return out

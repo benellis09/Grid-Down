@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Landing } from "@/components/Landing";
 import { Game } from "@/components/Game";
-import type { NewRunPayload, Run, RunBundle } from "@/types";
+import type { NewRunPayload, Run, RunBundle, SavePoint } from "@/types";
 
 function App() {
   const [runs, setRuns] = useState<Run[]>([]);
+  const [saves, setSaves] = useState<SavePoint[]>([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,6 +22,12 @@ function App() {
       setError("Could not reach the server.");
     } finally {
       setLoadingRuns(false);
+    }
+    try {
+      const res = await fetch("/api/saves");
+      if (res.ok) setSaves((await res.json()).saves ?? []);
+    } catch {
+      // Chapters are optional on the page; keep the last list if the request fails.
     }
   }, []);
 
@@ -92,6 +99,16 @@ function App() {
     }
   };
 
+  const deleteSave = async (id: number) => {
+    setSaves((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await fetch(`/api/saves/${id}`, { method: "DELETE" });
+    } catch {
+      setError("Could not delete that chapter.");
+    }
+    loadRuns();
+  };
+
   const choose = async (index: number) => {
     if (!bundle) return;
     setBusy(true);
@@ -132,11 +149,14 @@ function App() {
       ) : (
         <Landing
           runs={runs}
+          saves={saves}
           loadingRuns={loadingRuns}
           creating={creating}
           onCreate={createRun}
           onResume={resumeRun}
+          onResumeSave={resumeSave}
           onDelete={deleteRun}
+          onDeleteSave={deleteSave}
         />
       )}
 

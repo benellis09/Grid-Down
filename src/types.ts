@@ -63,6 +63,7 @@ export interface SavePoint {
   created_at: string;
   distance_miles: number;
   day: number;
+  player_name?: string;
 }
 
 export interface NewRunPayload {

@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { ArrowRight, Loader2, Trash2, Zap } from "lucide-react";
+import { ArrowRight, Loader2, Play, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { NewRunPayload, Run } from "@/types";
+import type { NewRunPayload, Run, SavePoint } from "@/types";
 
 interface LandingProps {
   runs: Run[];
+  saves: SavePoint[];
   loadingRuns: boolean;
   creating: boolean;
   onCreate: (payload: NewRunPayload) => void;
   onResume: (id: string) => void;
+  onResumeSave: (saveId: number) => void;
   onDelete: (id: string) => void;
+  onDeleteSave: (saveId: number) => void;
 }
 
 function milesLabel(run: Run) {
@@ -22,11 +25,14 @@ function milesLabel(run: Run) {
 
 export function Landing({
   runs,
+  saves,
   loadingRuns,
   creating,
   onCreate,
   onResume,
+  onResumeSave,
   onDelete,
+  onDeleteSave,
 }: LandingProps) {
   const [playerName, setPlayerName] = useState("");
   const [homeTown, setHomeTown] = useState("");
@@ -133,6 +139,59 @@ export function Landing({
             )}
           </Button>
         </form>
+
+        <section className="fade-up mt-14" style={{ animationDelay: "120ms" }}>
+          {saves.length > 0 && (
+            <>
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+                  Chapters
+                </h2>
+                <span className="font-mono-tight text-[11px] text-muted-foreground/70">
+                  {saves.length} saved
+                </span>
+              </div>
+              <ol className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
+                {saves.map((save, index) => (
+                  <li key={save.id} className="group flex items-center gap-4 bg-card/40 px-4 py-3.5">
+                    <div className="font-display w-14 shrink-0 text-[11px] uppercase tracking-[0.18em] text-primary/80">
+                      Chapter
+                      <div className="text-2xl normal-case leading-none tracking-normal">{index + 1}</div>
+                    </div>
+                    <button
+                      onClick={() => onResumeSave(save.id)}
+                      className="min-w-0 flex-1 text-left"
+                      title="Start a new journey from this chapter"
+                    >
+                      <div className="font-display truncate text-[15px]">{save.name}</div>
+                      <div className="mt-0.5 truncate font-mono-tight text-[11px] text-muted-foreground">
+                        {save.player_name ? `${save.player_name} · ` : ""}Day {save.day} · {save.distance_miles} mi from home
+                      </div>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground"
+                      onClick={() => onResumeSave(save.id)}
+                      aria-label={`Resume ${save.name}`}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                      onClick={() => onDeleteSave(save.id)}
+                      aria-label={`Delete ${save.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+        </section>
 
         <section className="fade-up mt-14" style={{ animationDelay: "160ms" }}>
           <div className="flex items-baseline justify-between">

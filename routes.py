@@ -147,6 +147,10 @@ def create_app(static_dir: str) -> FastAPI:
         db.delete_run(run_id)
         return {"ok": True}
 
+    @api.get("/saves")
+    def list_all_saves():
+        return {"saves": db.list_all_save_points()}
+
     @api.get("/runs/{run_id}/saves")
     def list_saves(run_id: str):
         if not db.get_run(run_id):
