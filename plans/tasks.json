@@ -1,0 +1,27 @@
+[
+  {
+    "content": "[setup-1] Add deps (google-genai, sqlalchemy, psycopg2-binary) and verify Neon connection",
+    "id": "1",
+    "status": "completed"
+  },
+  {
+    "content": "[backend-1] Build db.py schema + init (runs, scenes) and Gemini story engine in story.py",
+    "id": "2",
+    "status": "completed"
+  },
+  {
+    "content": "[backend-2] Add /api routes: create run, list runs, get run, choose, delete",
+    "id": "3",
+    "status": "completed"
+  },
+  {
+    "content": "[frontend-1] Build landing screen (new run + saved runs) and game screen with stats, narrative, choices, ending",
+    "id": "4",
+    "status": "completed"
+  },
+  {
+    "content": "[polish-1] Generate hero art, update titles/metadata, build and verify end-to-end",
+    "id": "5",
+    "status": "completed"
+  }
+]
