@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Pause, Play, Square, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,19 +18,25 @@ interface ReadAloudControlsProps {
   onEnabledChange: (value: boolean) => void;
   gender: VoiceGender;
   onGenderChange: (value: VoiceGender) => void;
+  narratorState: "off" | "idle" | "playing" | "paused";
+  onPlayPause: () => void;
+  onStop: () => void;
   voiceInputSupported: boolean;
   voiceInputEnabled: boolean;
   onVoiceInputChange: (value: boolean) => void;
   voiceInputError: string | null;
 }
 
-// A small button pinned to the top-right corner. Tapping it drops a compact panel down from the top.
+// Top-right cluster: narrator play/pause and stop, then the settings button. Settings drop a compact panel down from the top.
 export function ReadAloudControls({
   supported,
   enabled,
   onEnabledChange,
   gender,
   onGenderChange,
+  narratorState,
+  onPlayPause,
+  onStop,
   voiceInputSupported,
   voiceInputEnabled,
   onVoiceInputChange,
@@ -47,24 +53,61 @@ export function ReadAloudControls({
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const playLabel =
+    narratorState === "off"
+      ? "Start narration"
+      : narratorState === "paused"
+        ? "Resume narration"
+        : narratorState === "playing"
+          ? "Pause narration"
+          : "Replay this scene";
+  const showPause = narratorState === "playing";
+  const showStop = narratorState === "playing" || narratorState === "paused";
+
   return (
     <div className="fixed right-4 top-4 z-40 flex flex-col items-end gap-2">
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-10 w-10 rounded-full border-border bg-card/80 backdrop-blur"
-        onClick={() => setOpen((v) => !v)}
-        disabled={!supported}
-        title={supported ? "Read aloud" : "Read aloud is not supported in this browser"}
-        aria-label="Read aloud settings"
-        aria-expanded={open}
-      >
-        {enabled ? (
-          <Volume2 className="h-4 w-4 text-primary" />
-        ) : (
-          <VolumeX className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        {showStop && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 rounded-full border-border bg-card/80 backdrop-blur"
+            onClick={onStop}
+            disabled={!supported}
+            title="Stop narration"
+            aria-label="Stop narration"
+          >
+            <Square className="h-3.5 w-3.5 fill-current" />
+          </Button>
         )}
-      </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full border-border bg-card/80 backdrop-blur"
+          onClick={onPlayPause}
+          disabled={!supported}
+          title={playLabel}
+          aria-label={playLabel}
+        >
+          {showPause ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full border-border bg-card/80 backdrop-blur"
+          onClick={() => setOpen((v) => !v)}
+          disabled={!supported}
+          title={supported ? "Narrator settings" : "Read aloud is not supported in this browser"}
+          aria-label="Narrator settings"
+          aria-expanded={open}
+        >
+          {enabled ? (
+            <Volume2 className="h-4 w-4 text-primary" />
+          ) : (
+            <VolumeX className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
+      </div>
 
       {open && supported && (
         <div className="drop-in w-[230px] space-y-4 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">

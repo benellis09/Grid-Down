@@ -17,6 +17,7 @@ export function useReadAloud() {
   );
   const [gender, setGender] = useState<VoiceGender>(readStoredGender);
   const [paused, setPaused] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
 
   // Refs keep speak() stable, so changing voice or loading voices does not re-read the scene.
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -51,6 +52,7 @@ export function useReadAloud() {
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
     setPaused(false);
+    setSpeaking(false);
   }, [supported]);
 
   // Pausing only has an effect while a scene is actually being narrated.
@@ -92,15 +94,25 @@ export function useReadAloud() {
       utterance.rate = 0.9;
       utterance.pitch = currentGender === "male" ? 0.9 : 1.05;
       utterance.onend = () => {
-        if (utteranceRef.current === utterance) utteranceRef.current = null;
+        if (utteranceRef.current === utterance) {
+          utteranceRef.current = null;
+          setSpeaking(false);
+        }
+      };
+      utterance.onerror = () => {
+        if (utteranceRef.current === utterance) {
+          utteranceRef.current = null;
+          setSpeaking(false);
+        }
       };
 
       // Hold a reference so the browser does not garbage-collect the utterance mid-sentence.
       utteranceRef.current = utterance;
+      setSpeaking(true);
       synth.speak(utterance);
     },
     [supported]
   );
 
-  return { supported, enabled, setEnabled, gender, setGender, speak, stop, paused, pause, resume, isNarrating };
+  return { supported, enabled, setEnabled, gender, setGender, speak, stop, speaking, paused, pause, resume, isNarrating };
 }

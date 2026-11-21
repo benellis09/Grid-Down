@@ -196,6 +196,31 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
     return () => stopSpeaking();
   }, [readEnabled, current, speakScene, stopSpeaking]);
 
+  const narratorState: "off" | "idle" | "playing" | "paused" = !readEnabled
+    ? "off"
+    : readAloud.paused
+      ? "paused"
+      : readAloud.speaking
+        ? "playing"
+        : "idle";
+
+  // Start turns narration on (which reads the current scene). Otherwise it pauses, resumes, or replays the scene.
+  const onNarratorPlayPause = () => {
+    if (!readEnabled) {
+      readAloud.setEnabled(true);
+      return;
+    }
+    if (readAloud.paused) {
+      readAloud.resume();
+      return;
+    }
+    if (readAloud.speaking) {
+      readAloud.pause();
+      return;
+    }
+    if (current) speakScene(sceneSpeech(current));
+  };
+
   const progress = Math.round(((190 - run.distance_miles) / 190) * 100);
 
   return (
@@ -230,6 +255,9 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
           onEnabledChange={readAloud.setEnabled}
           gender={readAloud.gender}
           onGenderChange={readAloud.setGender}
+          narratorState={narratorState}
+          onPlayPause={onNarratorPlayPause}
+          onStop={stopSpeaking}
           voiceInputSupported={voiceInput.supported}
           voiceInputEnabled={voiceInput.enabled}
           onVoiceInputChange={voiceInput.setEnabled}
