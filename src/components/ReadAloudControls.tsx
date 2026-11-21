@@ -18,6 +18,10 @@ interface ReadAloudControlsProps {
   onEnabledChange: (value: boolean) => void;
   gender: VoiceGender;
   onGenderChange: (value: VoiceGender) => void;
+  voiceInputSupported: boolean;
+  voiceInputEnabled: boolean;
+  onVoiceInputChange: (value: boolean) => void;
+  voiceInputError: string | null;
 }
 
 // A small button pinned to the top-right corner. Tapping it drops a compact panel down from the top.
@@ -27,6 +31,10 @@ export function ReadAloudControls({
   onEnabledChange,
   gender,
   onGenderChange,
+  voiceInputSupported,
+  voiceInputEnabled,
+  onVoiceInputChange,
+  voiceInputError,
 }: ReadAloudControlsProps) {
   const [open, setOpen] = useState(false);
 
@@ -78,6 +86,29 @@ export function ReadAloudControls({
               <SelectItem value="male">Calm male voice</SelectItem>
             </SelectContent>
           </Select>
+
+          <div className="space-y-2 border-t border-border pt-4">
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="voice-input"
+                className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
+              >
+                Voice input
+              </Label>
+              <Switch
+                id="voice-input"
+                checked={voiceInputEnabled}
+                disabled={!voiceInputSupported}
+                onCheckedChange={onVoiceInputChange}
+              />
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {voiceInputSupported
+                ? "Say “option one”, “two” or “three” to choose. Say “pause” to stop the narrator and “resume” to continue."
+                : "Voice input needs a browser with speech recognition, such as Chrome, Edge or Safari."}
+            </p>
+            {voiceInputError && <p className="text-[11px] text-destructive">{voiceInputError}</p>}
+          </div>
         </div>
       )}
     </div>

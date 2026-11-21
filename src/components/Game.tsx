@@ -5,6 +5,7 @@ import {
   Clock,
   Footprints,
   Loader2,
+  Mic,
   MapPin,
   Package,
   RotateCcw,
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { StatBar } from "@/components/StatBar";
 import { ReadAloudControls } from "@/components/ReadAloudControls";
 import { useReadAloud } from "@/hooks/useReadAloud";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { parseVoiceCommand } from "@/lib/voiceCommand";
 import { cn } from "@/lib/utils";
 import type { Choice, Effects, Run, Scene } from "@/types";
 
@@ -161,6 +164,25 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GamePro
   const readAloud = useReadAloud();
   const { enabled: readEnabled, speak: speakScene, stop: stopSpeaking } = readAloud;
 
+  // Spoken commands: "option two" picks a choice once narration has finished, "pause" and "resume" control the narrator.
+  const handleVoice = (text: string) => {
+    const command = parseVoiceCommand(text);
+    if (!command) return;
+    if (command.kind === "pause") {
+      readAloud.pause();
+      return;
+    }
+    if (command.kind === "resume") {
+      readAloud.resume();
+      return;
+    }
+    const count = current?.choices.length ?? 0;
+    if (ended || busy || command.index >= count) return;
+    if (readAloud.isNarrating()) return;
+    onChoose(command.index);
+  };
+  const voiceInput = useVoiceInput(handleVoice);
+
   useEffect(() => {
     narrativeRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [current?.seq]);
@@ -206,7 +228,35 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart }: GamePro
           onEnabledChange={readAloud.setEnabled}
           gender={readAloud.gender}
           onGenderChange={readAloud.setGender}
+          voiceInputSupported={voiceInput.supported}
+          voiceInputEnabled={voiceInput.enabled}
+          onVoiceInputChange={voiceInput.setEnabled}
+          voiceInputError={voiceInput.error}
         />
+
+        {voiceInput.enabled && (
+          <div className="fixed bottom-4 left-1/2 z-40 flex max-w-[92vw] -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card/90 px-4 py-2 text-[12px] shadow-lg backdrop-blur">
+            <Mic
+              className={cn(
+                "h-3.5 w-3.5 shrink-0",
+                voiceInput.listening ? "text-primary" : "text-muted-foreground"
+              )}
+            />
+            <span className="truncate">
+              {readAloud.paused
+                ? "Paused. Say “resume” to continue."
+                : voiceInput.listening
+                  ? "Listening. Say “option two” or “pause”."
+                  : "Starting voice input…"}
+            </span>
+            {voiceInput.lastHeard && (
+              <span className="hidden truncate text-muted-foreground sm:inline">
+                · heard “{voiceInput.lastHeard}”
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 grid gap-8 lg:grid-cols-[240px_1fr]">
           <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
             <div>

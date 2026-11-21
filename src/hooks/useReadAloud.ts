@@ -16,6 +16,7 @@ export function useReadAloud() {
     () => supported && localStorage.getItem(ENABLED_KEY) === "1"
   );
   const [gender, setGender] = useState<VoiceGender>(readStoredGender);
+  const [paused, setPaused] = useState(false);
 
   // Refs keep speak() stable, so changing voice or loading voices does not re-read the scene.
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -49,6 +50,29 @@ export function useReadAloud() {
     if (!supported) return;
     window.speechSynthesis.cancel();
     utteranceRef.current = null;
+    setPaused(false);
+  }, [supported]);
+
+  // Pausing only has an effect while a scene is actually being narrated.
+  const pause = useCallback(() => {
+    if (!supported) return;
+    const synth = window.speechSynthesis;
+    if (!synth.speaking || synth.paused) return;
+    synth.pause();
+    setPaused(true);
+  }, [supported]);
+
+  const resume = useCallback(() => {
+    if (!supported) return;
+    window.speechSynthesis.resume();
+    setPaused(false);
+  }, [supported]);
+
+  // True while the narrator is reading aloud (not paused). Choices made during this window are ignored.
+  const isNarrating = useCallback(() => {
+    if (!supported) return false;
+    const synth = window.speechSynthesis;
+    return synth.speaking && !synth.paused;
   }, [supported]);
 
   const speak = useCallback(
@@ -56,6 +80,9 @@ export function useReadAloud() {
       if (!supported) return;
       const synth = window.speechSynthesis;
       synth.cancel();
+      // A cancel while paused can leave the queue paused, so clear it before the next scene.
+      synth.resume();
+      setPaused(false);
 
       const currentGender = genderRef.current;
       const voice = pickVoice(voicesRef.current, currentGender);
@@ -75,5 +102,5 @@ export function useReadAloud() {
     [supported]
   );
 
-  return { supported, enabled, setEnabled, gender, setGender, speak, stop };
+  return { supported, enabled, setEnabled, gender, setGender, speak, stop, paused, pause, resume, isNarrating };
 }
