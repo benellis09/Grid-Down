@@ -25,6 +25,7 @@ interface ReadAloudControlsProps {
   voiceInputEnabled: boolean;
   onVoiceInputChange: (value: boolean) => void;
   voiceInputError: string | null;
+  narrationError: string | null;
 }
 
 // Top-right cluster: narrator play/pause and stop, then the settings button. Settings drop a compact panel down from the top.
@@ -41,6 +42,7 @@ export function ReadAloudControls({
   voiceInputEnabled,
   onVoiceInputChange,
   voiceInputError,
+  narrationError,
 }: ReadAloudControlsProps) {
   const [open, setOpen] = useState(false);
 
@@ -109,6 +111,11 @@ export function ReadAloudControls({
         </Button>
       </div>
 
+      {enabled && narrationError && (
+        <p role="alert" className="max-w-[min(320px,90vw)] rounded-xl border border-border bg-card p-3 text-xs text-destructive shadow-lg">
+          {narrationError}
+        </p>
+      )}
       {open && supported && (
         <div className="drop-in w-[230px] space-y-4 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur">
           <div className="flex items-center justify-between">

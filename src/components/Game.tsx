@@ -163,6 +163,7 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
   const history = scenes.slice(0, -1);
   const ended = run.status === "ended";
   const narrativeRef = useRef<HTMLDivElement>(null);
+  const manuallyStartedScene = useRef<Scene | null>(null);
   const readAloud = useReadAloud();
   const { enabled: readEnabled, speak: speakScene, stop: stopSpeaking } = readAloud;
 
@@ -192,7 +193,8 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
   // Read each new scene and its options aloud, then wait for the player. Cleanup cancels speech when the scene changes, the toggle goes off, or the screen unmounts.
   useEffect(() => {
     if (!readEnabled || !current) return;
-    speakScene(sceneSpeech(current));
+    if (manuallyStartedScene.current !== current) speakScene(sceneSpeech(current));
+    manuallyStartedScene.current = null;
     return () => stopSpeaking();
   }, [readEnabled, current, speakScene, stopSpeaking]);
 
@@ -204,10 +206,17 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
         ? "playing"
         : "idle";
 
-  // Start turns narration on (which reads the current scene). Otherwise it pauses, resumes, or replays the scene.
+  // Start speech inside the click handler to preserve Chrome's user activation.
+  const onNarratorEnabledChange = (value: boolean) => {
+    if (value && current) {
+      manuallyStartedScene.current = current;
+      speakScene(sceneSpeech(current));
+    }
+    readAloud.setEnabled(value);
+  };
   const onNarratorPlayPause = () => {
     if (!readEnabled) {
-      readAloud.setEnabled(true);
+      onNarratorEnabledChange(true);
       return;
     }
     if (readAloud.paused) {
@@ -252,7 +261,8 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
         <ReadAloudControls
           supported={readAloud.supported}
           enabled={readEnabled}
-          onEnabledChange={readAloud.setEnabled}
+          onEnabledChange={onNarratorEnabledChange}
+          narrationError={readAloud.error}
           gender={readAloud.gender}
           onGenderChange={readAloud.setGender}
           narratorState={narratorState}
