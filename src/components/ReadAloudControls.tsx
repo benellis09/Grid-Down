@@ -132,8 +132,8 @@ export function ReadAloudControls({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="female">Calm female voice</SelectItem>
-              <SelectItem value="male">Calm male voice</SelectItem>
+              <SelectItem value="female">U.S. English · female</SelectItem>
+              <SelectItem value="male">U.S. English · male</SelectItem>
             </SelectContent>
           </Select>
 

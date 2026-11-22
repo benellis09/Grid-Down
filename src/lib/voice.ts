@@ -3,37 +3,27 @@ import type { VoiceGender } from "../types";
 // Voice names vary by OS and browser. These are matched as substrings, in priority order.
 const FEMALE_HINTS = [
   "samantha",
-  "karen",
-  "serena",
-  "fiona",
-  "moira",
-  "tessa",
   "zira",
   "aria",
   "jenny",
-  "google uk english female",
   "google us english",
 ];
 
 const MALE_HINTS = [
-  "daniel",
-  "arthur",
-  "george",
   "david",
   "mark",
   "alex",
   "fred",
-  "ryan",
   "guy",
   "tom",
-  "google uk english male",
 ];
 
 export function pickVoice(
   voices: SpeechSynthesisVoice[],
   gender: VoiceGender
 ): SpeechSynthesisVoice | null {
-  const english = voices.filter((v) => v.lang.toLowerCase().startsWith("en"));
+  // Never substitute a British or other English locale for the requested U.S. accent.
+  const english = voices.filter((v) => v.lang.replace(/_/g, "-").toLowerCase() === "en-us");
   if (english.length === 0) return null;
 
   const preferred = gender === "female" ? FEMALE_HINTS : MALE_HINTS;
