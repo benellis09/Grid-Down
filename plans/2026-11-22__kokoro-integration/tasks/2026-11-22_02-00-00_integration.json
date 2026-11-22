@@ -1,0 +1,17 @@
+[
+  {
+    "content": "[build-1] delegate: Implemented lazy Kokoro assets, serialized inference, bounded cache, API and six tests.",
+    "id": "1",
+    "status": "completed"
+  },
+  {
+    "content": "[build-2] self: Added audio playback, preparing status, cancel, US voices and MediaSession controls.",
+    "id": "2",
+    "status": "completed"
+  },
+  {
+    "content": "[verify-1] self: Live female/male WAV API, cache, mocked lifecycle and build passed; delegate review busy-request issue fixed with bounded retry.",
+    "id": "3",
+    "status": "completed"
+  }
+]

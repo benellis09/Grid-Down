@@ -1,0 +1,17 @@
+[
+  {
+    "content": "[fix-1] self: Add speech startup timeout and actionable errors without masking failures.",
+    "id": "1",
+    "status": "completed"
+  },
+  {
+    "content": "[fix-2] self: Wire direct-click narration and visible diagnostics into existing controls.",
+    "id": "2",
+    "status": "completed"
+  },
+  {
+    "content": "[verify-1] delegate: Review requested but inconclusive; self: typecheck, build, mocked speech-event tests passed; audible playback needs user verification.",
+    "id": "3",
+    "status": "completed"
+  }
+]

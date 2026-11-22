@@ -1,0 +1,17 @@
+[
+  {
+    "content": "[test-1] self: Installed CPU Kokoro runtime; downloaded ignored model assets.",
+    "id": "1",
+    "status": "completed"
+  },
+  {
+    "content": "[test-2] self: Both US voices generated valid WAVs; 205-word scene generated in 45.35s for 67s audio; peak RSS 980MB.",
+    "id": "2",
+    "status": "completed"
+  },
+  {
+    "content": "[test-3] delegate: Deployment review complete; self: build and script checks passed; listening and phone lock-screen checks remain for integration.",
+    "id": "3",
+    "status": "completed"
+  }
+]
