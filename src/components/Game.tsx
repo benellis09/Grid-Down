@@ -198,9 +198,11 @@ export function Game({ run, scenes, busy, onChoose, onExit, onRestart, onResumeS
     return () => stopSpeaking();
   }, [readEnabled, current, speakScene, stopSpeaking]);
 
-  const narratorState: "off" | "idle" | "playing" | "paused" = !readEnabled
+  const narratorState: "off" | "idle" | "preparing" | "playing" | "paused" = !readEnabled
     ? "off"
-    : readAloud.paused
+    : readAloud.preparing
+      ? "preparing"
+      : readAloud.paused
       ? "paused"
       : readAloud.speaking
         ? "playing"

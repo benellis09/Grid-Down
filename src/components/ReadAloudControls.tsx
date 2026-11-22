@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pause, Play, Square, Volume2, VolumeX } from "lucide-react";
+import { Loader2, Pause, Play, Square, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -18,7 +18,7 @@ interface ReadAloudControlsProps {
   onEnabledChange: (value: boolean) => void;
   gender: VoiceGender;
   onGenderChange: (value: VoiceGender) => void;
-  narratorState: "off" | "idle" | "playing" | "paused";
+  narratorState: "off" | "idle" | "preparing" | "playing" | "paused";
   onPlayPause: () => void;
   onStop: () => void;
   voiceInputSupported: boolean;
@@ -64,7 +64,7 @@ export function ReadAloudControls({
           ? "Pause narration"
           : "Replay this scene";
   const showPause = narratorState === "playing";
-  const showStop = narratorState === "playing" || narratorState === "paused";
+  const showStop = narratorState === "preparing" || narratorState === "playing" || narratorState === "paused";
 
   return (
     <div className="fixed right-4 top-4 z-40 flex flex-col items-end gap-2">
@@ -87,11 +87,11 @@ export function ReadAloudControls({
           size="icon"
           className="h-10 w-10 rounded-full border-border bg-card/80 backdrop-blur"
           onClick={onPlayPause}
-          disabled={!supported}
-          title={playLabel}
-          aria-label={playLabel}
+          disabled={!supported || narratorState === "preparing"}
+          title={narratorState === "preparing" ? "Preparing narration" : playLabel}
+          aria-label={narratorState === "preparing" ? "Preparing narration" : playLabel}
         >
-          {showPause ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {narratorState === "preparing" ? <Loader2 className="h-4 w-4 animate-spin" /> : showPause ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </Button>
         <Button
           variant="outline"
@@ -111,6 +111,11 @@ export function ReadAloudControls({
         </Button>
       </div>
 
+      {narratorState === "preparing" && (
+        <p role="status" aria-live="polite" className="max-w-[min(280px,90vw)] rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground shadow-lg">
+          Preparing narration… This may take about a minute. Keep this tab open until playback starts.
+        </p>
+      )}
       {enabled && narrationError && (
         <p role="alert" className="max-w-[min(320px,90vw)] rounded-xl border border-border bg-card p-3 text-xs text-destructive shadow-lg">
           {narrationError}
@@ -132,8 +137,8 @@ export function ReadAloudControls({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="female">U.S. English · female</SelectItem>
-              <SelectItem value="male">U.S. English · male</SelectItem>
+              <SelectItem value="female">U.S. English · female (Heart)</SelectItem>
+              <SelectItem value="male">U.S. English · male (Michael)</SelectItem>
             </SelectContent>
           </Select>
 

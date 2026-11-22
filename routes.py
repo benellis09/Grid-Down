@@ -2,11 +2,12 @@ import os
 import uuid
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import db
+import narration
 import story
 
 STARTING_MILES = 190
@@ -24,6 +25,12 @@ class Choice(BaseModel):
 
 class SaveName(BaseModel):
     name: str = Field(default="Save point", max_length=60)
+
+
+class NarrationRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=6000)
+    gender: str = Field(pattern="^(female|male)$")
+
 
 
 def _clamp(value: int, low: int = 0, high: int = 100) -> int:
@@ -100,6 +107,16 @@ def create_app(static_dir: str) -> FastAPI:
     db.init_db()
 
     api = APIRouter()
+
+    @api.post("/narration")
+    def generate_narration(payload: NarrationRequest):
+        try:
+            audio = narration.narrator.synthesize(payload.text, payload.gender)
+        except narration.NarrationBusy:
+            raise HTTPException(status_code=503, detail="Narration is busy; try again shortly", headers={"Retry-After": "2"}) from None
+        except narration.NarrationUnavailable:
+            raise HTTPException(status_code=503, detail="Narration is temporarily unavailable") from None
+        return Response(content=audio, media_type="audio/wav")
 
     @api.get("/health")
     def health():
